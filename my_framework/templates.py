@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from jinja2 import Template
-import os
+from os import path
+from io import open
 
 
 def render(template_name, folder='templates', **kwargs):
@@ -10,9 +11,9 @@ def render(template_name, folder='templates', **kwargs):
     :param kwargs: параметры
     :return:
     """
-    file_path = os.path.join(folder, template_name)
+    file_path = path.join(folder, template_name)
     # Открываем шаблон по имени
-    with open(file_path) as f:
+    with open(file_path, encoding='UTF-8') as f:
         # Читаем
         template = Template(f.read())
     # рендерим шаблон с параметрами
