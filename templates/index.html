@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Hello World</title>
+{% extends "base.html" %}
+{% block title %}
+Hello World{% endblock %}
+{% block body %}
+{% include 'inc_menu.html' %}
     <div align="center">
         <h1>Hello, main name is Dmitriy</h1>
 
     </div>
     <div align="center">        <p align="bottom">{{secret['secret']}}</p>
         <p>{{secret['key']}}</p></div>
-
-</head>
-<body>
-
-</body>
-</html>
+{% endblock %}

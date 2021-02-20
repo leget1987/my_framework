@@ -1,8 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>About World</title>
+{% extends "base.html" %}
+{% block title %}
+About World
+{% endblock %}
+{% block body %}
+{% include "inc_menu.html" %}
     <div>
         <h2 align="center">
             About me
@@ -10,8 +11,4 @@
         <p>I'm learning Python.
             My knowledge is getting better every day </p>
     </div>
-</head>
-<body>
-
-</body>
-</html>
+{% endblock %}
