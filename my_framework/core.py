@@ -1,8 +1,27 @@
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append("..")
+
+from wsgiref.util import setup_testing_defaults
+
 from views import not_found_404
+import quopri
 
 
 class Application:
+    #@staticmethod
+    def decode_value(val):
+        val_b = bytes(val.replace('%', '=').replace("+", " "), 'UTF-8')
+        val_decode_str = quopri.decodestring(val_b)
+        print(val_decode_str.decode('UTF-8'))
+        return val_decode_str.decode('UTF-8')
+
+    def add_route(self, url):
+        # паттерн декоратор
+        def inner(view):
+            self.routes[url] = view
+
+        return inner
 
     def parse_input_data(self, data):
         result = {}
@@ -32,6 +51,7 @@ class Application:
         self.fronts = fronts
 
     def __call__(self, environ, start_response):
+        setup_testing_defaults(environ)
         path = environ['PATH_INFO']
         method = environ['REQUEST_METHOD']
         data = self.get_wsgi_input_data(environ)
