@@ -51,8 +51,10 @@ class Application:
         self.fronts = fronts
 
     def __call__(self, environ, start_response):
+        print(self.routes)
         setup_testing_defaults(environ)
         path = environ['PATH_INFO']
+        print(path)
         method = environ['REQUEST_METHOD']
         data = self.get_wsgi_input_data(environ)
         data = self.parse_wsgi_input_data(data)
@@ -80,3 +82,33 @@ class Application:
             code, body = view(request)
             start_response(code, [('ContexType', 'text/html')])
             return [body.encode('utf-8')]
+
+
+# Новый вид WSGI-application.
+# Первый — логирующий (такой же, как основной,
+# только для каждого запроса выводит информацию
+# (тип запроса и параметры) в консоль.
+class DebugApplication(Application):
+
+    def __init__(self, urlpatterns, front_controllers):
+        self.application = Application(urlpatterns, front_controllers)
+        super().__init__(urlpatterns, front_controllers)
+
+    def __call__(self, env, start_response):
+        print('DEBUG MODE')
+        print(env)
+        return self.application(env, start_response)
+
+
+# Новый вид WSGI-application.
+# Второй — фейковый (на все запросы пользователя отвечает:
+# 200 OK, Hello from Fake).
+class FakeApplication(Application):
+
+    def __init__(self, urlpatterns, front_controllers):
+        self.application = Application(urlpatterns, front_controllers)
+        super().__init__(urlpatterns, front_controllers)
+
+    def __call__(self, env, start_response):
+        start_response('200 OK', [('Content-Type', 'text/html')])
+        return [b'Hello from Fake']

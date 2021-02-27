@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from reusepatterns.singletones import SingletonByName
-import time
+from time import time
 
 
 # Заметка, можно применить стратегию если добавить стратегию логирования
@@ -11,3 +11,15 @@ class Logger(metaclass=SingletonByName):
 
     def log(self, text):
         print('log--->', text)
+
+
+# декоратор
+def debug(func):
+    def inner(*args, **kwargs):
+        start = time()
+        result = func(*args, **kwargs)
+        end = time()
+        print('DEBUG-------->', func.__name__, end - start)
+        return result
+
+    return inner

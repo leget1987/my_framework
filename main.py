@@ -3,9 +3,9 @@ from wsgiref.simple_server import make_server
 
 import core
 from templates import render
-from core import Application
+from core import Application, FakeApplication, DebugApplication
 from models import TrainingSite
-from logging_mod import Logger
+from logging_mod import Logger, debug
 
 # Создание копирование курса, список курсов
 # Регистрация пользователя, список пользователей
@@ -21,6 +21,7 @@ def main_view(request):
     return '200 OK', render('course_list.html', objects_list=site.courses)
 
 
+@debug
 def create_course(request):
     if request['method'] == 'POST':
         # метод пост
@@ -43,6 +44,8 @@ def create_course(request):
         return '200 OK', render('create_course.html', categories=categories)
 
 
+
+@debug
 def create_category(request):
     if request['method'] == 'POST':
         # метод пост
@@ -69,6 +72,27 @@ def create_category(request):
         return '200 OK', render('create_category.html', categories=categories)
 
 
+routes = {
+    '/': main_view,
+    '/create-course/': create_course,
+    '/create-category/': create_category,
+    "/head/": head_view
+
+}
+
+
+def secret_controller(request):
+    request['secret'] = 'secret'
+
+
+front_controllers = [
+    secret_controller
+]
+
+application = Application(routes, front_controllers)
+
+
+@application.add_route('/copy-course/')
 def copy_course(request):
     request_params = request['request_params']
     # print(request_params)
@@ -83,11 +107,14 @@ def copy_course(request):
     return '200 OK', render('course_list.html', objects_list=site.courses)
 
 
+@application.add_route('/category_list/')
 def category_list(request):
+    print(routes)
     logger.log('Список категорий')
     return '200 OK', render('category_list.html', objects_list=site.categories)
 
 
+@application.add_route('/about/')
 def about_view(request):
     result = {
         "secret": request.get('secret_key'),
@@ -96,7 +123,9 @@ def about_view(request):
     return '200 OK', render('about.html', secret=result)
 
 
+@application.add_route('/contact/')
 def contact_view(request):
+    print(routes)
     # Проверка метода запроса
     if request['method'] == 'POST':
         print(request)
@@ -112,28 +141,6 @@ def contact_view(request):
         return '200 OK', render('contact.html')
 
 
-urlpatterns = {
-    '/': main_view,
-    '/create-course/': create_course,
-    '/create-category/': create_category,
-    '/copy-course/': copy_course,
-    '/category-list/': category_list,
-    '/about/': about_view,
-    '/contact/': contact_view,
-    "/head/": head_view
-
-}
-
-
-def secret_controller(request):
-    request['secret'] = 'secret'
-
-
-front_controllers = [
-    secret_controller
-]
-
-application = Application(urlpatterns, front_controllers)
 with make_server('', 8000, application) as httpd:
     print("Serving on port 8000...")
     httpd.serve_forever()
