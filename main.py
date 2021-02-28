@@ -4,8 +4,10 @@ from wsgiref.simple_server import make_server
 import core
 from templates import render
 from core import Application, FakeApplication, DebugApplication
-from models import TrainingSite
+from models import TrainingSite, BaseSerializer, EmailNotifier, SmsNotifier
 from logging_mod import Logger, debug
+from my_framework.wavycbv import ListView, CreateView
+
 
 # Создание копирование курса, список курсов
 # Регистрация пользователя, список пользователей
@@ -14,7 +16,8 @@ from views import head_view
 
 site = TrainingSite()
 logger = Logger('main')
-
+email_notifier = EmailNotifier()
+sms_notifier = SmsNotifier()
 
 def main_view(request):
     logger.log('Список курсов')
@@ -34,6 +37,9 @@ def create_course(request):
             category = site.find_category_by_id(int(category_id))
 
             course = site.create_course('record', name, category)
+            # Добавляем наблюдателей на курс
+            course.observers.append(email_notifier)
+            course.observers.append(sms_notifier)
             site.courses.append(course)
         # редирект?
         # return '302 Moved Temporarily', render('create_course.html')
@@ -43,16 +49,16 @@ def create_course(request):
         categories = site.categories
         return '200 OK', render('create_course.html', categories=categories)
 
+class CategoryCreateView(CreateView):
+    template_name = 'create_category.html'
 
+    def get_context_data(self):
+        context = super().get_context_data()
+        context['categories'] = site.categories
+        return context
 
-@debug
-def create_category(request):
-    if request['method'] == 'POST':
-        # метод пост
-        data = request['data']
-        # print(data)
+    def create_obj(self, data: dict):
         name = data['name']
-
         name = Application.decode_value(name)
         category_id = data.get('category_id')
 
@@ -61,22 +67,84 @@ def create_category(request):
             category = site.find_category_by_id(int(category_id))
 
         new_category = site.create_category(name, category)
-
         site.categories.append(new_category)
-        # редирект?
-        # return '302 Moved Temporarily', render('create_course.html')
-        # Для начала можно без него
-        return '200 OK', render('create_category.html')
-    else:
-        categories = site.categories
-        return '200 OK', render('create_category.html', categories=categories)
+
+class CategoryListView(ListView):
+    queryset = site.categories
+    template_name = 'category_list.html'
+
+
+class StudentListView(ListView):
+    queryset = site.students
+    template_name = 'student_list.html'
+
+
+class StudentCreateView(CreateView):
+    template_name = 'create_student.html'
+
+    def create_obj(self, data: dict):
+        name = data['name']
+        name = Application.decode_value(name)
+        print(name)
+        new_obj = site.create_user('student', name)
+        site.students.append(new_obj)
+
+
+class AddStudentByCourseCreateView(CreateView):
+    template_name = 'add_student.html'
+
+    def get_context_data(self):
+        context = super().get_context_data()
+        context['courses'] = site.courses
+        context['students'] = site.students
+        return context
+
+    def create_obj(self, data: dict):
+        course_name = data['course_name']
+        course_name = Application.decode_value(course_name)
+        course = site.get_course(course_name)
+        student_name = data['student_name']
+        student_name = Application.decode_value(student_name)
+        student = site.get_student(student_name)
+        course.add_student(student)
+
+
+# @debug
+# def create_category(request):
+#     if request['method'] == 'POST':
+#         # метод пост
+#         data = request['data']
+#         # print(data)
+#         name = data['name']
+#
+#         name = Application.decode_value(name)
+#         category_id = data.get('category_id')
+#
+#         category = None
+#         if category_id:
+#             category = site.find_category_by_id(int(category_id))
+#
+#         new_category = site.create_category(name, category)
+#
+#         site.categories.append(new_category)
+#         # редирект?
+#         # return '302 Moved Temporarily', render('create_course.html')
+#         # Для начала можно без него
+#         return '200 OK', render('create_category.html')
+#     else:
+#         categories = site.categories
+#         return '200 OK', render('create_category.html', categories=categories)
 
 
 routes = {
     '/': main_view,
     '/create-course/': create_course,
-    '/create-category/': create_category,
-    "/head/": head_view
+    '/create-category/': CategoryCreateView(),
+    '/category-list/': CategoryListView(),
+    "/head/": head_view,
+    '/student-list/': StudentListView(),
+    '/create-student/': StudentCreateView(),
+    '/add-student/': AddStudentByCourseCreateView()
 
 }
 

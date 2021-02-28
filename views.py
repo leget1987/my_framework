@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import quopri
-
 from my_framework.templates import render
 
 
