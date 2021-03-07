@@ -7,6 +7,8 @@ from core import Application, FakeApplication, DebugApplication
 from models import TrainingSite, BaseSerializer, EmailNotifier, SmsNotifier
 from logging_mod import Logger, debug
 from my_framework.wavycbv import ListView, CreateView
+from framework_orm import UnitOfWork
+from mappers import MapperRegistry
 
 
 # Создание копирование курса, список курсов
@@ -18,6 +20,9 @@ site = TrainingSite()
 logger = Logger('main')
 email_notifier = EmailNotifier()
 sms_notifier = SmsNotifier()
+UnitOfWork.new_current()
+UnitOfWork.get_current().set_mapper_registry(MapperRegistry)
+
 
 def main_view(request):
     logger.log('Список курсов')
